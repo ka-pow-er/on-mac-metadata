@@ -1,0 +1,13 @@
+#!/bin/sh
+# Script to rename Macs with a unique name (before Sophos Endpoint is installed)
+#     then store that unique name in the host-info.plist
+# generate a UUID
+identifier=$(uuidgen)
+# remove the first four sections of the UUID, leaving a 12-digit string
+truncate=${identifier#*-*-*-*-}
+identifier=${truncate#$identifier}
+# Rename the Mac using the jamf binary
+/usr/local/bin/jamf setcomputername -name "MN-$identifier"
+# Add the Computer Name to the host-info plist
+/usr/libexec/PlistBuddy -c "Add :comp_name string 'MN-$identifier'" /var/db/.com.YOUR-ORG.host-info.plist
+exit 0
