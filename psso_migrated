@@ -1,0 +1,13 @@
+#!/bin/sh
+# add psso_migrated key to host-info.plist
+PLIST=/var/db/.com.YOUR-ORG.host-info.plist
+KEY=psso_migrated
+CHECK=$(defaults read $PLIST $KEY)
+if [ "$CHECK" == "YES" ]; then
+	echo "psso_migrated key already exists. exiting"
+	exit 0
+else
+/usr/libexec/PlistBuddy -c "Add :psso_migrated string YES" $PLIST
+	echo "psso_migrated key added"
+fi
+	exit 0
