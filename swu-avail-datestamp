@@ -1,0 +1,20 @@
+#!/bin/bash
+# Add swu_avail DATE_STAMP to host-info plist
+# This script will run once daily via Jamf Policy until a software update is performed
+#     so we mustn't overwrite the original date stamp
+PLIST=/var/db/.com.YOUR-ORG.host-info.plist
+if  [ -e "$PLIST" ]; then
+	echo "plist found"
+fi
+# Test for existing swu_avail key. If present, exit
+KEY="swu_avail"
+KEY_TEST="defaults read $PLIST $KEY"
+if ($KEY_TEST) > /dev/null 2>&1; then
+	echo "swu date stamp found. exiting"
+	exit
+else
+	echo "adding date stamp"
+	DATE_STAMP=$(/bin/date +%Y-%m-%d)
+	/usr/libexec/PlistBuddy -c "Add :swu_avail string $DATE_STAMP" /private/var/db/.com.sophos.host-info.plist
+	/usr/local/jamf/bin/jamf recon
+fi
