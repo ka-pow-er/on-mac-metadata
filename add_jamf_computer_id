@@ -1,0 +1,68 @@
+#!/bin/bash
+# create host-info plist, add key for Jamf computer id#
+#
+# Be sure to assign values $4 for apiuser & $5 for apipass in the Policy
+# Be sure to assign value $6 for the build (e.g. FYxx-Qx) in the Policy
+#
+# Variables
+jamfProURL="https://YOUR-ORG.jamfcloud.com"
+PLIST=/var/db/.com.YOUR-ORG.host-info.plist
+apiuser="$4"
+apipass="$5"
+#
+#Variable declarations
+bearerToken=""
+tokenExpirationEpoch="0"
+
+getBearerToken() {
+	response=$(curl -s -u "$apiuser":"$apipass" "$jamfProURL"/api/v1/auth/token -X POST)
+	bearerToken=$(echo "$response" | plutil -extract token raw -)
+	tokenExpiration=$(echo "$response" | plutil -extract expires raw - | awk -F . '{print $1}')
+	tokenExpirationEpoch=$(date -j -f "%Y-%m-%dT%T" "$tokenExpiration" +"%s")
+}
+
+checkTokenExpiration() {
+	if (("$tokenExpirationEpoch" > "$(date +%s)"))
+	then
+		echo "Token valid until the following epoch time: " "$tokenExpirationEpoch"
+	else
+		echo "No valid token available, getting new token"
+		getBearerToken
+	fi
+}
+checkTokenExpiration
+#
+# get serial number for jamf id API call
+serial=$(ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}')
+echo $serial
+# add key for jamf id
+# the API username is jamf_id_api and password can be found in Password State https://pwstate.green.sophos/pid=65440
+# Don't edit below this line once script is working
+# create host-info plist, add Jamf Computer ID
+JamfID=$(curl -H "Accept: text/xml" -sfku "${apiuser}:${apipass}" "${jamfProURL}/JSSResource/computers/serialnumber/${serial}/subset/general" | xmllint --format - 2>/dev/null | awk -F'>|<' '/<id>/{print $3; exit}')
+/usr/libexec/PlistBuddy -c "Add :jamf_id string $JamfID" $PLIST
+# read jamf id from plist to ensure the script worked
+KEY="jamf_id"
+KEY_CHECK="defaults read $PLIST $KEY"
+VALUE=$($KEY_CHECK)
+echo "Jamf ID is $VALUE."
+#
+invalidateToken() {
+	responseCode=$(curl -w "%{http_code}" -H "Authorization: Bearer ${bearerToken}" $jamfProURL/api/v1/auth/invalidate-token -X POST -s -o /dev/null)
+	if [[ ${responseCode} == 204 ]]
+	then
+		echo "Token successfully invalidated"
+		bearerToken=""
+		tokenExpirationEpoch="0"
+	elif [[ ${responseCode} == 401 ]]
+	then
+		echo "Token already invalid"
+	else
+		echo "An unknown error occurred invalidating the token"
+	fi
+}
+
+invalidateToken
+# Launch Self Service
+open -a "/Applications/Self Service.app"
+exit 0
