@@ -1,0 +1,12 @@
+#!/bin/bash
+# Add build name to host-info plist, as part of a Jamf Policy
+# Be sure to assign a value ($4, $5, $6) for the build (e.g. FYxx-Qx) in the Policy
+# create host-info plist if none exists, add key for build
+# This script runs once after a Mac is enrolled in Jamf, so there's no need to check for an existing value
+#Variables
+PLIST=/var/db/.com.YOUR-ORG.host-info.plist
+/usr/libexec/PlistBuddy -c "Add :build string $6" $PLIST
+# add key for build date stamp
+DATE_STAMP=$(/bin/date "+%Y-%m-%d %H:%M")
+/usr/libexec/PlistBuddy -c "Add :build_date string $DATE_STAMP" $PLIST
+exit 0
