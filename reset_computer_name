@@ -1,0 +1,23 @@
+#!/bin/sh
+# Script to rename Macs which no longer match the computer name we set
+#     in the host-info.plist during the build, and rename them as such
+###
+# Test (compare) the Mac's name against the name we set in the host-info plist
+#     If there is a match, there is nothing to do, so exit. 
+#     Otherwise, proceed and change the name.
+# read (the intended) comp_name from the host-info plist
+PLIST=/var/db/.com.YOUR-ORG.host-info.plist
+comp_name=$( defaults read $PLIST comp_name )
+echo "Computer name should be $comp_name"
+# read the Mac's Computer Name
+ComputerName=$(scutil --get ComputerName)
+if [[ "$ComputerName" == "$comp_name" ]]; then
+    echo "Computer name is $ComputerName and does not need to be changed. Exiting"
+    exit 
+elif [[ "$ComputerName" != "$comp_name" ]]; then
+    echo "Computer name is $ComputerName and must be renamed"
+# Rename the Mac
+    /usr/local/bin/jamf setcomputername -name "$comp_name"
+fi
+/usr/local/jamf/bin/jamf recon
+exit 0
