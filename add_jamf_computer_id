@@ -35,9 +35,6 @@ checkTokenExpiration
 # get serial number for jamf id API call
 serial=$(ioreg -c IOPlatformExpertDevice -d 2 | awk -F\" '/IOPlatformSerialNumber/{print $(NF-1)}')
 echo $serial
-# add key for jamf id
-# the API username is jamf_id_api and password can be found in Password State https://pwstate.green.sophos/pid=65440
-# Don't edit below this line once script is working
 # create host-info plist, add Jamf Computer ID
 JamfID=$(curl -H "Accept: text/xml" -sfku "${apiuser}:${apipass}" "${jamfProURL}/JSSResource/computers/serialnumber/${serial}/subset/general" | xmllint --format - 2>/dev/null | awk -F'>|<' '/<id>/{print $3; exit}')
 /usr/libexec/PlistBuddy -c "Add :jamf_id string $JamfID" $PLIST
