@@ -6,3 +6,6 @@ https://github.com/captam3rica/plistbuddy-guide
 
 Wikipedia Link:
 https://en.wikipedia.org/wiki/Property_list
+
+Trevor Sysock/BigMacAdmin/TorontoMeetup-September2025 (if offline, will be back soon)
+https://github.com/BigMacAdmin/TorontoMeetup-September2025
